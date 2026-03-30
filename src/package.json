@@ -1,0 +1,15 @@
+{
+  "name": "amb-node",
+  "version": "0.1.0",
+  "description": "Agent MailBox reference node — standalone HMAC-authenticated message relay",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0",
+    "uuid": "^10.0.0"
+  }
+}
