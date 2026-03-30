@@ -1,68 +1,49 @@
 # AMB — Agent MailBox Protocol
 
-A minimal, harness-agnostic protocol for agent-to-agent communication over HTTP.
+AMB lets AI agents on different machines talk to each other over HTTP. Each agent runs a node that has an inbox. You send messages to other nodes' inboxes, and poll your own inbox for messages sent to you. That's it.
 
-## What is AMB?
+## How It Works
 
-AI agents are siloed by their runtime. AMB fixes that. It's a wire format + behavior contract — not a framework, not a platform. Three endpoints, HMAC auth, SQLite storage. Implementable in an afternoon.
+Every node exposes three HTTP endpoints:
 
-**Principles:**
-- **Spec, not product.** AMB defines how agents talk. What they do with the messages is their business.
-- **Glass wall security.** Messages cross the boundary. Actions never do.
-- **Each side owns their data.** No shared state, no sync, no consensus.
-- **Harness-agnostic.** Works with forge, Claude Code, Cursor, a Python script, whatever.
+- **`POST /inbox`** — Send a signed message to this node
+- **`GET /inbox`** — Read messages (optionally filter with `?since=<timestamp>`)
+- **`GET /health`** — Check if the node is up
 
-## Protocol (v1)
+Messages are JSON envelopes signed with HMAC-SHA256. Each node keeps a `peers.json` file listing the nodes it trusts and their shared secrets. If a message doesn't have a valid signature from a known peer, it gets rejected.
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/inbox` | Send a message to this node |
-| `GET` | `/inbox` | Poll for messages (with optional `?since=` filter) |
-| `GET` | `/health` | Node status |
+Messages are stored locally in SQLite. Each node owns its own data — there's no shared database, no sync, no coordination between nodes.
 
-**Message envelope:**
-```json
-{
-  "id": "uuid-v4",
-  "from": "ember@calebs-mac",
-  "to": "jane@zimacube",
-  "thread": "uuid-or-null",
-  "type": "message | question | response",
-  "body": "plain text or markdown",
-  "ts": "ISO-8601",
-  "sig": "hmac-sha256(secret, canonical-json)"
-}
-```
+**Security model ("glass wall"):** Nodes accept and store messages. They never execute anything from message content. Messages cross the boundary, actions don't.
 
-Auth is per-peer HMAC-SHA256. Peers are registered in `peers.json` with a shared secret. Invalid or missing signatures get a `401`. Messages over 64KB get a `413`.
-
-## Reference Node
-
-The `src/` directory contains a working reference implementation in Node.js (~150 lines of actual logic).
+## Quick Start
 
 ```bash
-cd src && npm install && node server.js
+cd src
+npm install
+node server.js
 # → AMB node ember@calebs-mac listening on :3141
 ```
 
-See [`src/README.md`](src/README.md) for full API docs, curl examples, and test instructions.
+Configure your node identity in `src/config.json` and register peers in `src/peers.json`. See [`src/README.md`](src/README.md) for API docs and curl examples.
 
 ## Project Structure
 
 ```
+README.md       This file
 prd.md          Protocol spec and design rationale
 src/
-  server.js     Express routes + startup
-  auth.js       HMAC-SHA256 sign / verify / canonicalize
-  store.js      SQLite via better-sqlite3
-  config.json   Node identity
-  peers.json    Known peers and shared secrets
-  test/         Test suite (node:test)
+  server.js     HTTP server (Express)
+  auth.js       HMAC-SHA256 signing and verification
+  store.js      SQLite message storage
+  config.json   Node identity (name, host, port)
+  peers.json    Trusted peers and shared secrets
+  test/         26 passing tests (node:test)
 ```
 
 ## Status
 
-v0.1 — Reference implementation complete. Three endpoints, HMAC auth, SQLite storage, 26 passing tests. Ready for multi-node testing.
+v0.1 — Reference implementation complete. Ready for multi-node testing.
 
 ## License
 
