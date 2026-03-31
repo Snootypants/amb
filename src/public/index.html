@@ -6,38 +6,69 @@
 <title>AMB // Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── Theme Variables ─────────────────────────────────────── */
+/* ── Custom Properties ──────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 :root {
-  --bg-deep:       #0d1117;
-  --bg-surface:    #161b22;
-  --bg-elevated:   #1c2129;
-  --bg-hover:      #21262d;
-  --border:        #30363d;
-  --border-bright: #484f58;
+  --font-sans:  'Space Grotesk', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', monospace;
 
-  --text-primary:  #e6edf3;
-  --text-secondary:#8b949e;
-  --text-muted:    #484f58;
+  --fs-xs:   clamp(0.65rem, 0.6rem + 0.2vi, 0.75rem);
+  --fs-sm:   clamp(0.75rem, 0.7rem + 0.2vi, 0.85rem);
+  --fs-base: clamp(0.85rem, 0.8rem + 0.25vi, 0.95rem);
+  --fs-md:   clamp(1.05rem, 0.95rem + 0.4vi, 1.2rem);
+  --fs-lg:   clamp(1.3rem, 1.1rem + 0.6vi, 1.5rem);
 
-  --amber:         #f0883e;
-  --amber-dim:     #d18616;
-  --amber-glow:    rgba(240, 136, 62, 0.15);
-  --amber-bright:  #ffa657;
+  --bg-deep:      #0E0D0B;
+  --bg-surface:   #16151A;
+  --bg-elevated:  #1D1C22;
+  --bg-hover:     #25242B;
+  --bg-inset:     #0A0A08;
 
-  --green:         #3fb950;
-  --green-dim:     rgba(63, 185, 80, 0.15);
-  --red:           #f85149;
-  --red-dim:       rgba(248, 81, 73, 0.15);
-  --cyan:          #79c0ff;
+  --border-subtle:  rgba(255, 215, 170, 0.04);
+  --border-default: rgba(255, 215, 170, 0.08);
+  --border-bright:  rgba(255, 215, 170, 0.14);
 
-  --font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --radius:        6px;
-  --transition:    200ms ease;
+  --text-primary:   #E8E4DF;
+  --text-secondary: #908A82;
+  --text-muted:     #5C5750;
+
+  --accent:         #D4A04A;
+  --accent-hover:   #E8B85E;
+  --accent-muted:   rgba(212, 160, 74, 0.12);
+  --accent-bright:  #F0C970;
+
+  --status-ok:      #4ADE80;
+  --status-ok-dim:  rgba(74, 222, 128, 0.12);
+  --status-err:     #EF5350;
+  --status-err-dim: rgba(239, 83, 80, 0.10);
+  --peer-name:      #6CC4B0;
+
+  --space-1:  4px;
+  --space-2:  6px;
+  --space-3:  10px;
+  --space-4:  14px;
+  --space-5:  20px;
+  --space-6:  28px;
+  --space-7:  40px;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+
+  --ease-out:    cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-snappy: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-hover:  150ms;
+  --duration-press:  80ms;
+  --duration-focus:  150ms;
+  --duration-panel:  200ms;
+  --duration-enter:  300ms;
+
+  --rail-width: 280px;
 }
 
-/* ── Reset & Base ────────────────────────────────────────── */
+/* ── Reset & Base ───────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
@@ -53,228 +84,305 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Dot-matrix background ───────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(circle, var(--text-muted) 0.5px, transparent 0.5px);
-  background-size: 24px 24px;
-  opacity: 0.15;
-  pointer-events: none;
-  z-index: 0;
+/* ── Dashboard entrance ─────────────────────────────────── */
+@keyframes dashEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* ── Layout ──────────────────────────────────────────────── */
-.shell {
-  position: relative;
-  z-index: 1;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 24px 64px;
-}
-
-/* ── Header ──────────────────────────────────────────────── */
-.header {
+.dashboard {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 40px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
+  min-height: 100vh;
+  animation: dashEnter var(--duration-enter) var(--ease-out) both;
 }
 
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--amber);
-}
-
-.header h1 span {
-  color: var(--text-muted);
-  font-weight: 300;
-}
-
-.header .tag {
-  font-size: 0.7rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 2px 8px;
-  border-radius: 3px;
-  background: var(--amber-glow);
-  color: var(--amber);
-  border: 1px solid var(--amber-dim);
-}
-
-/* ── Stagger animation ───────────────────────────────────── */
-@keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.panel {
-  animation: fadeSlideIn 0.4s ease both;
-}
-
-.panel:nth-child(1) { animation-delay: 0.05s; }
-.panel:nth-child(2) { animation-delay: 0.12s; }
-.panel:nth-child(3) { animation-delay: 0.19s; }
-.panel:nth-child(4) { animation-delay: 0.26s; }
-
-/* ── Panel (card) ────────────────────────────────────────── */
-.panel {
+/* ── Left Rail ──────────────────────────────────────────── */
+.rail {
+  width: var(--rail-width);
+  flex-shrink: 0;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 24px;
-  overflow: hidden;
+  border-right: 1px solid var(--border-default);
+  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 2;
+  box-shadow:
+    3px 0 6px rgba(0, 0, 0, 0.20),
+    6px 0 16px rgba(0, 0, 0, 0.10);
 }
 
-.panel-head {
+.rail-header h1 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-2);
+}
+
+.rail-node-id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.rail-health {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
 }
 
-.panel-head h2 {
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-secondary);
+/* ── Health dot breathing ───────────────────────────────── */
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 4px rgba(74, 222, 128, 0.4); }
+  50%      { box-shadow: 0 0 8px rgba(74, 222, 128, 0.6), 0 0 14px rgba(74, 222, 128, 0.15); }
 }
 
-.panel-body {
-  padding: 16px;
-}
-
-/* ── Status indicator ────────────────────────────────────── */
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   display: inline-block;
-  margin-right: 6px;
   background: var(--text-muted);
-  transition: background var(--transition);
+  flex-shrink: 0;
 }
 
 .status-dot.ok {
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
+  background: var(--status-ok);
+  animation: breathe 3s ease-in-out infinite;
 }
 
 .status-dot.err {
-  background: var(--red);
-  box-shadow: 0 0 6px var(--red);
+  background: var(--status-err);
+  box-shadow: 0 0 6px var(--status-err);
 }
 
-/* ── Node info grid ──────────────────────────────────────── */
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+/* ── Rail sections ──────────────────────────────────────── */
+.rail-section {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
 }
 
-.info-cell {
-  padding: 10px 12px;
-  background: var(--bg-deep);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+.rail-section-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
 }
 
-.info-cell .label {
-  font-size: 0.65rem;
+/* ── Rail node details ──────────────────────────────────── */
+.rail-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+}
+
+.rail-detail .label {
+  font-size: var(--fs-xs);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: 4px;
 }
 
-.info-cell .value {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  word-break: break-all;
+.rail-detail .value {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
 }
 
-.info-cell .value.amber { color: var(--amber); }
+/* ── Rail peers ─────────────────────────────────────────── */
+.rail-peers {
+  flex: 1;
+  overflow-y: auto;
+}
 
-/* ── Peer list ───────────────────────────────────────────── */
 .peer-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .peer-row:last-child { border-bottom: none; }
 
+.peer-info {
+  min-width: 0;
+  flex: 1;
+}
+
 .peer-name {
+  font-family: var(--font-mono);
   font-weight: 500;
-  color: var(--cyan);
+  font-size: var(--fs-sm);
+  color: var(--peer-name);
 }
 
 .peer-url {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 190px;
 }
 
 .peer-status {
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 2px 8px;
-  border-radius: 3px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-left: var(--space-2);
 }
 
 .peer-status.reachable {
-  background: var(--green-dim);
-  color: var(--green);
+  background: var(--status-ok-dim);
+  color: var(--status-ok);
 }
 
 .peer-status.unreachable {
-  background: var(--red-dim);
-  color: var(--red);
+  background: var(--status-err-dim);
+  color: var(--status-err);
 }
 
 .peer-status.checking {
   color: var(--text-muted);
 }
 
-/* ── Inbox messages ──────────────────────────────────────── */
-.msg-row {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
+/* ── Main Area ──────────────────────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-6) var(--space-7);
+  max-width: 760px;
+  position: relative;
 }
 
-.msg-row:last-child { border-bottom: none; }
+/* Dot grid on main area only */
+.main::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: var(--rail-width);
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle, var(--text-muted) 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Panels ─────────────────────────────────────────────── */
+.panel {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-5);
+  overflow: hidden;
+}
+
+.panel + .panel-separator {
+  margin-top: var(--space-6);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+}
+
+.panel-head h2 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+
+.panel-head .meta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.panel-body {
+  padding: var(--space-5);
+}
+
+/* ── Collapsible panels ─────────────────────────────────── */
+.panel-head.collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel-head.collapsible::after {
+  content: "\25B8";
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform var(--duration-panel) var(--ease-out);
+  margin-left: var(--space-3);
+}
+
+.panel.is-open .panel-head.collapsible::after {
+  transform: rotate(90deg);
+}
+
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--duration-panel) var(--ease-out);
+}
+
+.panel.is-open .collapsible-body {
+  max-height: 800px;
+}
+
+/* ── Inbox messages ─────────────────────────────────────── */
+.msg-row {
+  padding: var(--space-4) var(--space-1);
+}
+
+.msg-row:nth-child(odd) {
+  background: var(--bg-surface);
+}
+
+.msg-row:nth-child(even) {
+  background: transparent;
+}
 
 .msg-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-  font-size: 0.75rem;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: var(--fs-xs);
 }
 
 .msg-from {
-  color: var(--amber-bright);
+  color: var(--accent-bright);
   font-weight: 500;
 }
 
@@ -283,374 +391,395 @@ body::before {
 }
 
 .msg-to {
-  color: var(--cyan);
+  color: var(--peer-name);
   font-weight: 500;
 }
 
 .msg-ts {
   color: var(--text-muted);
   margin-left: auto;
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
 }
 
 .msg-body {
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
-  padding-left: 2px;
+  line-height: 1.6;
+  padding-left: var(--space-1);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .msg-type {
-  font-size: 0.65rem;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
   color: var(--text-muted);
 }
+
+.msg-type.question { color: var(--accent); }
+.msg-type.response { color: var(--peer-name); }
 
 .empty-state {
   text-align: center;
-  padding: 32px 16px;
+  padding: var(--space-7) var(--space-5);
   color: var(--text-muted);
-  font-style: italic;
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
-/* ── Invite Generator ────────────────────────────────────── */
-.invite-controls {
+/* ── Form controls ──────────────────────────────────────── */
+.form-row {
   display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 
-.invite-controls label {
-  font-size: 0.7rem;
+.form-row label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1;
   min-width: 140px;
 }
 
-.invite-controls input {
+.form-row input,
+.form-row textarea,
+.form-row select {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   padding: 8px 10px;
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
   color: var(--text-primary);
   outline: none;
-  transition: border-color var(--transition);
+  transition: border-color var(--duration-focus) var(--ease-snappy);
 }
 
-.invite-controls input:focus {
-  border-color: var(--amber);
+.form-row input:focus,
+.form-row textarea:focus,
+.form-row select:focus {
+  border-color: var(--accent);
 }
 
-.invite-output {
-  position: relative;
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  font-size: 0.8rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-  word-break: break-all;
-  min-height: 120px;
+.form-row textarea {
+  resize: vertical;
+  min-height: 80px;
+  width: 100%;
 }
 
-.btn {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 8px 16px;
-  border: 1px solid var(--amber-dim);
-  border-radius: var(--radius);
-  background: var(--amber-glow);
-  color: var(--amber);
-  cursor: pointer;
-  transition: all var(--transition);
-  white-space: nowrap;
+.form-row textarea::placeholder {
+  color: var(--text-muted);
 }
 
-.btn:hover {
-  background: var(--amber-dim);
-  color: var(--bg-deep);
-  border-color: var(--amber);
-}
-
-.btn:active {
-  transform: scale(0.97);
-}
-
-.btn.copied {
-  background: var(--green-dim);
-  color: var(--green);
-  border-color: var(--green);
-}
-
-.invite-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  align-items: center;
-}
-
-.btn-regen {
-  background: transparent;
-  border-color: var(--border-bright);
-  color: var(--text-secondary);
-}
-
-.btn-regen:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  border-color: var(--text-muted);
-}
-
-/* ── Contact Picker ─────────────────────────────────────── */
-.contact-picker {
-  position: relative;
-}
-
-.contact-picker select {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  padding: 8px 10px;
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-primary);
-  outline: none;
+.form-row select {
   width: 100%;
   cursor: pointer;
-  transition: border-color var(--transition);
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235C5750' viewBox='0 0 16 16'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
 }
 
-.contact-picker select:focus {
-  border-color: var(--amber);
-}
-
-.contact-picker select option {
+.form-row select option {
   background: var(--bg-surface);
   color: var(--text-primary);
 }
 
-.no-contacts-msg {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-style: italic;
-  padding: 4px 0;
+/* ── Invite output ──────────────────────────────────────── */
+.invite-output {
+  background: var(--bg-inset);
+  border: none;
+  border-left: 3px solid var(--border-bright);
+  border-radius: 0;
+  padding: var(--space-4);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 80px;
+  margin-bottom: var(--space-3);
 }
 
-/* ── Accept Invite ──────────────────────────────────────── */
-.accept-input {
-  width: 100%;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  padding: 12px;
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+/* ── Buttons ────────────────────────────────────────────── */
+.btn-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.btn {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--bg-deep);
+  cursor: pointer;
+  transition: background var(--duration-hover) var(--ease-snappy);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--accent-hover);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn.copied {
+  background: var(--status-ok);
+  color: var(--bg-deep);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-bright);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-hover);
   color: var(--text-primary);
-  resize: vertical;
-  min-height: 100px;
-  outline: none;
-  transition: border-color var(--transition);
+  border-color: var(--text-muted);
 }
 
-.accept-input:focus {
-  border-color: var(--amber);
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 0;
 }
 
-.accept-input::placeholder {
-  color: var(--text-muted);
+.btn-link:hover {
+  color: var(--text-primary);
 }
 
-.accept-result {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
+/* ── Result banners ─────────────────────────────────────── */
+.result-banner {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-sm);
   display: none;
+  border-left: 3px solid transparent;
+  border-radius: 0;
 }
 
-.accept-result.success {
+.result-banner.success {
   display: block;
-  background: var(--green-dim);
-  color: var(--green);
-  border: 1px solid var(--green);
+  background: var(--status-ok-dim);
+  color: var(--status-ok);
+  border-left-color: var(--status-ok);
 }
 
-.accept-result.error {
+.result-banner.error {
   display: block;
-  background: var(--red-dim);
-  color: var(--red);
-  border: 1px solid var(--red);
+  background: var(--status-err-dim);
+  color: var(--status-err);
+  border-left-color: var(--status-err);
 }
 
-/* ── Scrollbar ───────────────────────────────────────────── */
+.no-contacts-msg {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  padding: var(--space-1) 0;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+::-webkit-scrollbar-thumb { background: rgba(255, 220, 180, 0.10); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 220, 180, 0.18); }
 
-/* ── Responsive ──────────────────────────────────────────── */
-@media (max-width: 600px) {
-  .shell { padding: 16px 12px 48px; }
-  .info-grid { grid-template-columns: 1fr; }
-  .header { flex-direction: column; gap: 8px; }
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .dashboard { flex-direction: column; }
+  .rail {
+    width: 100%;
+    height: auto;
+    position: relative;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: var(--space-3) var(--space-5);
+    gap: var(--space-5);
+    border-right: none;
+    border-bottom: 1px solid var(--border-default);
+    box-shadow:
+      0 3px 6px rgba(0, 0, 0, 0.20),
+      0 6px 16px rgba(0, 0, 0, 0.10);
+  }
+  .rail-details,
+  .rail-peers { display: none; }
+  .main { padding: var(--space-5); max-width: 100%; }
+  .main::before { left: 0; }
 }
 </style>
 </head>
 <body>
 
-<div class="shell">
+<div class="dashboard">
 
-  <!-- Header -->
-  <div class="header" style="animation: fadeSlideIn 0.3s ease both;">
-    <h1>AMB <span>//</span> Dashboard</h1>
-    <span class="tag" id="node-tag">loading</span>
-  </div>
+  <!-- ═══ Left Rail ═══════════════════════════════════════ -->
+  <aside class="rail">
 
-  <!-- Node Status -->
-  <section class="panel" id="panel-node">
-    <div class="panel-head">
-      <h2>Node Status</h2>
-      <div>
+    <!-- Header -->
+    <div class="rail-header">
+      <h1>AMB</h1>
+      <div class="rail-node-id" id="node-id">loading...</div>
+      <div class="rail-health">
         <span class="status-dot" id="health-dot"></span>
-        <span id="health-label" style="font-size:0.75rem;color:var(--text-muted);">checking...</span>
+        <span id="health-label">checking...</span>
       </div>
     </div>
-    <div class="panel-body">
-      <div class="info-grid" id="node-info">
-        <!-- filled by JS -->
+
+    <!-- Node Details -->
+    <div class="rail-section rail-details">
+      <div class="rail-section-label">Node</div>
+      <div id="node-details">
+        <div class="rail-detail"><span class="label">Host</span><span class="value" id="detail-host">--</span></div>
+        <div class="rail-detail"><span class="label">Port</span><span class="value" id="detail-port">--</span></div>
+        <div class="rail-detail"><span class="label">Uptime</span><span class="value" id="detail-uptime">--</span></div>
       </div>
     </div>
-  </section>
 
-  <!-- Peers -->
-  <section class="panel" id="panel-peers">
-    <div class="panel-head">
-      <h2>Peers</h2>
-      <span id="peer-count" style="font-size:0.75rem;color:var(--text-muted);">--</span>
+    <!-- Peers -->
+    <div class="rail-section rail-peers">
+      <div class="rail-section-label">Peers (<span id="peer-count">0</span>)</div>
+      <div id="peers-list">
+        <div class="empty-state" style="padding:var(--space-3) 0;text-align:left;">loading...</div>
+      </div>
     </div>
-    <div class="panel-body" id="peers-list">
-      <div class="empty-state">loading peers...</div>
-    </div>
-  </section>
 
-  <!-- Inbox -->
-  <section class="panel" id="panel-inbox">
-    <div class="panel-head">
-      <h2>Inbox</h2>
-      <span id="msg-count" style="font-size:0.75rem;color:var(--text-muted);">--</span>
-    </div>
-    <div class="panel-body" id="inbox-list" style="max-height:400px;overflow-y:auto;">
-      <div class="empty-state">loading messages...</div>
-    </div>
-  </section>
+  </aside>
 
-  <!-- Accept Invite -->
-  <section class="panel" id="panel-accept">
-    <div class="panel-head">
-      <h2>Accept Invite</h2>
-    </div>
-    <div class="panel-body">
-      <textarea class="accept-input" id="accept-paste" placeholder="Paste the peers.json snippet from an invite here, e.g.&#10;{&#10;  &quot;ember&quot;: {&#10;    &quot;url&quot;: &quot;http://calebs-mac:3141/amb&quot;,&#10;    &quot;secret&quot;: &quot;abc123...&quot;&#10;  }&#10;}"></textarea>
-      <div class="invite-controls" style="margin-top:12px;">
-        <label>
-          Link to Contact
-          <div class="contact-picker">
-            <select id="accept-contact">
-              <option value="">-- none --</option>
-            </select>
+  <!-- ═══ Main Content ════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- Inbox (always expanded, primary) -->
+    <section class="panel" id="panel-inbox">
+      <div class="panel-head">
+        <h2>Inbox</h2>
+        <span class="meta"><span id="msg-count">--</span> &middot; <span style="font-size:var(--fs-xs);">auto-refreshes every 15s</span></span>
+      </div>
+      <div class="panel-body" id="inbox-list">
+        <div class="empty-state">No messages.</div>
+      </div>
+    </section>
+
+    <!-- Separator before collapsible tools -->
+    <div class="panel-separator"></div>
+
+    <!-- Accept Invite (collapsible) -->
+    <section class="panel" id="panel-accept">
+      <div class="panel-head collapsible" onclick="togglePanel('panel-accept')">
+        <h2>Accept Invite</h2>
+      </div>
+      <div class="collapsible-body">
+        <div class="panel-body" style="padding:var(--space-4) var(--space-5);">
+          <div class="form-row">
+            <label style="flex:1 1 100%;">
+              Paste Invite
+              <textarea id="accept-paste" placeholder="Paste the peers.json snippet from an invite here, e.g.&#10;{&#10;  &quot;ember&quot;: {&#10;    &quot;url&quot;: &quot;http://calebs-mac:3141/amb&quot;,&#10;    &quot;secret&quot;: &quot;abc123...&quot;&#10;  }&#10;}"></textarea>
+            </label>
           </div>
-        </label>
-      </div>
-      <div class="invite-actions">
-        <button class="btn" id="btn-accept" onclick="acceptInvite()">Accept Peer</button>
-      </div>
-      <div class="accept-result" id="accept-result"></div>
-    </div>
-  </section>
-
-  <!-- Invite Generator -->
-  <section class="panel" id="panel-invite">
-    <div class="panel-head">
-      <h2>Invite Generator</h2>
-    </div>
-    <div class="panel-body">
-      <div class="invite-controls">
-        <label>
-          Peer Name
-          <input type="text" id="invite-name" placeholder="josh" value="josh">
-        </label>
-        <label>
-          Public URL Override
-          <input type="text" id="invite-url" placeholder="auto-detect from config">
-        </label>
-        <label>
-          Link to Contact
-          <div class="contact-picker">
-            <select id="invite-contact">
-              <option value="">-- none --</option>
-            </select>
+          <div class="form-row" style="margin-bottom:0;">
+            <label style="flex:1;">
+              Link to Contact
+              <select id="accept-contact">
+                <option value="">-- none --</option>
+              </select>
+            </label>
           </div>
-        </label>
+          <div class="btn-row" style="margin-top:var(--space-4);">
+            <button class="btn" id="btn-accept" onclick="acceptInvite()">Accept Peer</button>
+          </div>
+          <div class="result-banner" id="accept-result"></div>
+        </div>
       </div>
-      <div class="invite-output" id="invite-text">Generate an invite to see the message here.</div>
-      <div class="invite-actions">
-        <button class="btn" id="btn-generate" onclick="generateInvite()">Generate Invite</button>
-        <button class="btn btn-regen" id="btn-copy" onclick="copyInvite()" style="display:none;">Copy to Clipboard</button>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Settings -->
-  <section class="panel" id="panel-settings">
-    <div class="panel-head">
-      <h2>Settings</h2>
-    </div>
-    <div class="panel-body">
-      <div class="invite-controls">
-        <label style="flex:3;">
-          Contacts Database Path
-          <input type="text" id="settings-contacts-db" placeholder="/path/to/contacts.db">
-        </label>
-        <label style="flex:0;align-self:flex-end;">
-          &nbsp;
-          <button class="btn" onclick="saveSettings()" style="margin:0;">Save</button>
-        </label>
+    <!-- Invite Generator (collapsible) -->
+    <section class="panel" id="panel-invite">
+      <div class="panel-head collapsible" onclick="togglePanel('panel-invite')">
+        <h2>Invite Generator</h2>
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-        <button class="btn btn-regen" onclick="createContactsDb()">Create New AMBcontacts.db</button>
-        <span id="settings-status" style="font-size:0.75rem;color:var(--text-muted);"></span>
+      <div class="collapsible-body">
+        <div class="panel-body" style="padding:var(--space-4) var(--space-5);">
+          <div class="form-row">
+            <label>
+              Peer Name
+              <input type="text" id="invite-name" placeholder="peer name">
+            </label>
+            <label>
+              Public URL Override
+              <input type="text" id="invite-url" placeholder="auto-detect from config">
+            </label>
+            <label>
+              Link to Contact
+              <select id="invite-contact">
+                <option value="">-- none --</option>
+              </select>
+            </label>
+          </div>
+          <div class="invite-output" id="invite-text">Generate an invite to see the message here.</div>
+          <div class="btn-row">
+            <button class="btn" id="btn-generate" onclick="generateInvite()">Generate Invite</button>
+            <button class="btn btn-ghost" id="btn-copy" onclick="copyInvite()" style="display:none;">Copy to Clipboard</button>
+          </div>
+        </div>
       </div>
-      <div class="accept-result" id="settings-result"></div>
-    </div>
-  </section>
+    </section>
+
+    <!-- Settings (collapsible) -->
+    <section class="panel" id="panel-settings">
+      <div class="panel-head collapsible" onclick="togglePanel('panel-settings')">
+        <h2>Settings</h2>
+      </div>
+      <div class="collapsible-body">
+        <div class="panel-body" style="padding:var(--space-4) var(--space-5);">
+          <div class="form-row" style="align-items:flex-end;">
+            <label style="flex:3;">
+              Contacts Database Path
+              <input type="text" id="settings-contacts-db" placeholder="/path/to/contacts.db">
+            </label>
+            <button class="btn" onclick="saveSettings()" style="margin-bottom:1px;">Save</button>
+          </div>
+          <div style="margin-top:var(--space-2);">
+            <button class="btn-link" onclick="createContactsDb()">Create new AMBcontacts.db</button>
+            <span id="settings-status" style="font-size:var(--fs-xs);color:var(--text-muted);margin-left:var(--space-3);"></span>
+          </div>
+          <div class="result-banner" id="settings-result"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
 
 </div>
 
@@ -683,18 +812,15 @@ function formatTs(iso) {
   } catch { return iso; }
 }
 
-function infoCell(label, value, cls) {
-  return `<div class="info-cell">
-    <div class="label">${escapeHtml(label)}</div>
-    <div class="value${cls ? ' ' + cls : ''}">${escapeHtml(value)}</div>
-  </div>`;
-}
-
-// ── Fetch helpers ───────────────────────────────────────────
 async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
+}
+
+// ── Collapsible panels ─────────────────────────────────────
+function togglePanel(id) {
+  document.getElementById(id).classList.toggle('is-open');
 }
 
 // ── Load Node Status ────────────────────────────────────────
@@ -706,28 +832,24 @@ async function loadNode() {
     ]);
     nodeConfig = config;
 
-    document.getElementById('node-tag').textContent = config.nodeId;
+    document.getElementById('node-id').textContent = config.nodeId;
 
     const dot = document.getElementById('health-dot');
     const label = document.getElementById('health-label');
     dot.className = 'status-dot ok';
     label.textContent = health.status + ' // v' + health.version;
-    label.style.color = 'var(--green)';
+    label.style.color = 'var(--status-ok)';
 
-    document.getElementById('node-info').innerHTML =
-      infoCell('Name', config.name, 'amber') +
-      infoCell('Host', config.host) +
-      infoCell('Port', String(config.port)) +
-      infoCell('Node ID', config.nodeId, 'amber') +
-      infoCell('Version', health.version) +
-      infoCell('Page Uptime', relativeTime(Date.now() - startTime));
+    document.getElementById('detail-host').textContent = config.host;
+    document.getElementById('detail-port').textContent = config.port;
+    document.getElementById('detail-uptime').textContent = relativeTime(Date.now() - startTime);
 
   } catch (e) {
     const dot = document.getElementById('health-dot');
     const label = document.getElementById('health-label');
     dot.className = 'status-dot err';
     label.textContent = 'unreachable';
-    label.style.color = 'var(--red)';
+    label.style.color = 'var(--status-err)';
   }
 }
 
@@ -736,16 +858,16 @@ async function loadPeers() {
   try {
     const peers = await fetchJSON('/api/peers');
     const container = document.getElementById('peers-list');
-    document.getElementById('peer-count').textContent = peers.length + ' configured';
+    document.getElementById('peer-count').textContent = peers.length;
 
     if (peers.length === 0) {
-      container.innerHTML = '<div class="empty-state">No peers configured.</div>';
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:var(--fs-xs);padding:var(--space-2) 0;">No peers configured.</div>';
       return;
     }
 
     container.innerHTML = peers.map(p => `
       <div class="peer-row">
-        <div>
+        <div class="peer-info">
           <span class="peer-name">${escapeHtml(p.name)}</span>
           <span class="peer-url">${escapeHtml(p.url)}</span>
         </div>
@@ -753,13 +875,12 @@ async function loadPeers() {
       </div>
     `).join('');
 
-    // Ping each peer's health in the background
     for (const p of peers) {
       checkPeer(p);
     }
   } catch (e) {
     document.getElementById('peers-list').innerHTML =
-      '<div class="empty-state">Failed to load peers.</div>';
+      '<div style="color:var(--text-muted);font-size:var(--fs-xs);">Failed to load peers.</div>';
   }
 }
 
@@ -775,7 +896,6 @@ async function checkPeer(peer) {
       mode: 'no-cors',
     });
     clearTimeout(timer);
-    // no-cors means we can't read status, but if it didn't throw, connection exists
     el.textContent = 'reachable';
     el.className = 'peer-status reachable';
   } catch {
@@ -792,18 +912,17 @@ async function loadInbox() {
     document.getElementById('msg-count').textContent = messages.length + ' messages';
 
     if (messages.length === 0) {
-      container.innerHTML = '<div class="empty-state">Inbox empty. Waiting for messages...</div>';
+      container.innerHTML = '<div class="empty-state">No messages.</div>';
       return;
     }
 
-    // Show most recent first
     const sorted = [...messages].reverse();
-    container.innerHTML = sorted.map(m => `
+    container.innerHTML = sorted.map((m, i) => `
       <div class="msg-row">
         <div class="msg-meta">
-          <span class="msg-type">${escapeHtml(m.type)}</span>
+          <span class="msg-type ${escapeHtml(m.type)}">${escapeHtml(m.type)}</span>
           <span class="msg-from">${escapeHtml(m.from)}</span>
-          <span class="msg-arrow">-&gt;</span>
+          <span class="msg-arrow">\u2192</span>
           <span class="msg-to">${escapeHtml(m.to)}</span>
           <span class="msg-ts">${formatTs(m.ts)}</span>
         </div>
@@ -845,7 +964,6 @@ async function copyInvite() {
       btn.classList.remove('copied');
     }, 1500);
   } catch {
-    // Fallback
     const ta = document.createElement('textarea');
     ta.value = text;
     document.body.appendChild(ta);
@@ -866,7 +984,6 @@ async function loadContacts() {
     for (const id of selectors) {
       const sel = document.getElementById(id);
       if (!sel) continue;
-      // Keep first option (-- none --)
       sel.innerHTML = '<option value="">-- none --</option>';
       for (const c of contacts) {
         const opt = document.createElement('option');
@@ -876,7 +993,6 @@ async function loadContacts() {
       }
     }
   } catch {
-    // No contacts DB configured — hide pickers
     const pickers = document.querySelectorAll('.contact-picker');
     pickers.forEach(p => {
       p.innerHTML = '<span class="no-contacts-msg">No contacts DB configured</span>';
@@ -888,7 +1004,7 @@ async function loadContacts() {
 async function acceptInvite() {
   const raw = document.getElementById('accept-paste').value.trim();
   const resultEl = document.getElementById('accept-result');
-  resultEl.className = 'accept-result';
+  resultEl.className = 'result-banner';
   resultEl.style.display = 'none';
 
   if (!raw) return;
@@ -920,15 +1036,14 @@ async function acceptInvite() {
       added.push(name);
     }
 
-    resultEl.className = 'accept-result success';
+    resultEl.className = 'result-banner success';
     resultEl.textContent = `Added peer${added.length > 1 ? 's' : ''}: ${added.join(', ')}`;
     resultEl.style.display = 'block';
     document.getElementById('accept-paste').value = '';
 
-    // Refresh peers list
     loadPeers();
   } catch (e) {
-    resultEl.className = 'accept-result error';
+    resultEl.className = 'result-banner error';
     resultEl.textContent = e.message;
     resultEl.style.display = 'block';
   }
@@ -955,15 +1070,14 @@ async function saveSettings() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    resultEl.className = 'accept-result success';
+    resultEl.className = 'result-banner success';
     resultEl.textContent = 'Settings saved. Contacts DB: ' + (data.contactsDb || '(none)');
     resultEl.style.display = 'block';
 
-    // Reload contacts with new DB
     loadContacts();
     setTimeout(() => { resultEl.style.display = 'none'; }, 3000);
   } catch (e) {
-    resultEl.className = 'accept-result error';
+    resultEl.className = 'result-banner error';
     resultEl.textContent = e.message;
     resultEl.style.display = 'block';
   }
@@ -982,14 +1096,14 @@ async function createContactsDb() {
     if (!res.ok) throw new Error(data.error);
 
     document.getElementById('settings-contacts-db').value = data.contactsDb;
-    resultEl.className = 'accept-result success';
+    resultEl.className = 'result-banner success';
     resultEl.textContent = 'Created ' + data.contactsDb;
     resultEl.style.display = 'block';
 
     loadContacts();
     setTimeout(() => { resultEl.style.display = 'none'; }, 3000);
   } catch (e) {
-    resultEl.className = 'accept-result error';
+    resultEl.className = 'result-banner error';
     resultEl.textContent = e.message;
     resultEl.style.display = 'block';
   }
@@ -1005,8 +1119,8 @@ async function createContactsDb() {
 
   // Auto-refresh uptime counter
   setInterval(() => {
-    const uptimeCell = document.querySelector('.info-cell:last-child .value');
-    if (uptimeCell) uptimeCell.textContent = relativeTime(Date.now() - startTime);
+    const el = document.getElementById('detail-uptime');
+    if (el) el.textContent = relativeTime(Date.now() - startTime);
   }, 1000);
 
   // Auto-refresh inbox every 15s
