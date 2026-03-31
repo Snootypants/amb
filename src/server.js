@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { verify } = require('./auth');
 const store = require('./store');
 
@@ -17,6 +18,9 @@ function createApp(opts = {}) {
   store.init(config.dbPath);
 
   const app = express();
+
+  // Serve static dashboard files
+  app.use(express.static(path.join(__dirname, 'public')));
 
   app.use(express.json({ limit: '64kb' }));
 
@@ -73,13 +77,82 @@ function createApp(opts = {}) {
     res.json(messages);
   });
 
+  // ── Dashboard API ───────────────────────────────────────────
+
+  // GET /api/node — non-sensitive node identity info
+  app.get('/api/node', (_req, res) => {
+    res.json({
+      name: config.name,
+      host: config.host,
+      port: config.port,
+      nodeId: `${config.name}@${config.host}`,
+    });
+  });
+
+  // GET /api/peers — peer names and URLs (no secrets)
+  app.get('/api/peers', (_req, res) => {
+    const list = Object.entries(peers).map(([name, peer]) => ({
+      name,
+      url: peer.url,
+    }));
+    res.json(list);
+  });
+
+  // POST /api/peers — accept a peer (add to live peers + write to peers.json)
+  app.post('/api/peers', (req, res) => {
+    const { name, url, secret } = req.body || {};
+    if (!name || !url || !secret) {
+      return res.status(400).json({ error: 'Missing required fields: name, url, secret' });
+    }
+
+    // Add to live peers object so inbox auth works immediately
+    peers[name] = { url, secret };
+
+    // Persist to peers.json (if we have a real file path)
+    if (opts.peersPath) {
+      const fs = require('node:fs');
+      const current = JSON.parse(fs.readFileSync(opts.peersPath, 'utf-8'));
+      current[name] = { url, secret };
+      fs.writeFileSync(opts.peersPath, JSON.stringify(current, null, 2) + '\n');
+    }
+
+    res.status(201).json({ name, url });
+  });
+
+  // GET /api/invite/:peerName — generate invite message with shared secret
+  app.get('/api/invite/:peerName', (req, res) => {
+    const peerName = req.params.peerName;
+    const secret = crypto.randomBytes(32).toString('hex');
+    const nodeUrl = req.query.url || `http://${config.host}:${config.port}`;
+
+    const message = `Hey — here's what you need to add me as a peer in your AMB node:
+
+Add this to your peers.json:
+{
+  "${config.name}": {
+    "url": "${nodeUrl}/amb",
+    "secret": "${secret}"
+  }
+}
+
+I've added you on my end. Once you're running, hit my /health endpoint to verify: ${nodeUrl}/health`;
+
+    res.json({
+      peerName,
+      nodeName: config.name,
+      secret,
+      nodeUrl,
+      message,
+    });
+  });
+
   return app;
 }
 
 // ── Standalone startup ─────────────────────────────────────────
 if (require.main === module) {
   const config = require('./config.json');
-  const app = createApp();
+  const app = createApp({ peersPath: path.join(__dirname, 'peers.json') });
   app.listen(config.port, () => {
     console.log(`AMB node ${config.name}@${config.host} listening on :${config.port}`);
   });

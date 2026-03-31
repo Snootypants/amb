@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMB // Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── Theme Variables ─────────────────────────────────────── */
+:root {
+  --bg-deep:       #0d1117;
+  --bg-surface:    #161b22;
+  --bg-elevated:   #1c2129;
+  --bg-hover:      #21262d;
+  --border:        #30363d;
+  --border-bright: #484f58;
+
+  --text-primary:  #e6edf3;
+  --text-secondary:#8b949e;
+  --text-muted:    #484f58;
+
+  --amber:         #f0883e;
+  --amber-dim:     #d18616;
+  --amber-glow:    rgba(240, 136, 62, 0.15);
+  --amber-bright:  #ffa657;
+
+  --green:         #3fb950;
+  --green-dim:     rgba(63, 185, 80, 0.15);
+  --red:           #f85149;
+  --red-dim:       rgba(248, 81, 73, 0.15);
+  --cyan:          #79c0ff;
+
+  --font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --radius:        6px;
+  --transition:    200ms ease;
+}
+
+/* ── Reset & Base ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-mono);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Dot-matrix background ───────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, var(--text-muted) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--amber);
+}
+
+.header h1 span {
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.header .tag {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--amber-glow);
+  color: var(--amber);
+  border: 1px solid var(--amber-dim);
+}
+
+/* ── Stagger animation ───────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel {
+  animation: fadeSlideIn 0.4s ease both;
+}
+
+.panel:nth-child(1) { animation-delay: 0.05s; }
+.panel:nth-child(2) { animation-delay: 0.12s; }
+.panel:nth-child(3) { animation-delay: 0.19s; }
+.panel:nth-child(4) { animation-delay: 0.26s; }
+
+/* ── Panel (card) ────────────────────────────────────────── */
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.panel-head h2 {
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.panel-body {
+  padding: 16px;
+}
+
+/* ── Status indicator ────────────────────────────────────── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  background: var(--text-muted);
+  transition: background var(--transition);
+}
+
+.status-dot.ok {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.status-dot.err {
+  background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+}
+
+/* ── Node info grid ──────────────────────────────────────── */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.info-cell {
+  padding: 10px 12px;
+  background: var(--bg-deep);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.info-cell .label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.info-cell .value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.info-cell .value.amber { color: var(--amber); }
+
+/* ── Peer list ───────────────────────────────────────────── */
+.peer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.peer-row:last-child { border-bottom: none; }
+
+.peer-name {
+  font-weight: 500;
+  color: var(--cyan);
+}
+
+.peer-url {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.peer-status {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.peer-status.reachable {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.peer-status.unreachable {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.peer-status.checking {
+  color: var(--text-muted);
+}
+
+/* ── Inbox messages ──────────────────────────────────────── */
+.msg-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.msg-row:last-child { border-bottom: none; }
+
+.msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+
+.msg-from {
+  color: var(--amber-bright);
+  font-weight: 500;
+}
+
+.msg-arrow {
+  color: var(--text-muted);
+}
+
+.msg-to {
+  color: var(--cyan);
+  font-weight: 500;
+}
+
+.msg-ts {
+  color: var(--text-muted);
+  margin-left: auto;
+  font-size: 0.7rem;
+}
+
+.msg-body {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding-left: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.msg-type {
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* ── Invite Generator ────────────────────────────────────── */
+.invite-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.invite-controls label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.invite-controls input {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.invite-controls input:focus {
+  border-color: var(--amber);
+}
+
+.invite-output {
+  position: relative;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 120px;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border: 1px solid var(--amber-dim);
+  border-radius: var(--radius);
+  background: var(--amber-glow);
+  color: var(--amber);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--amber-dim);
+  color: var(--bg-deep);
+  border-color: var(--amber);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.copied {
+  background: var(--green-dim);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.invite-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.btn-regen {
+  background: transparent;
+  border-color: var(--border-bright);
+  color: var(--text-secondary);
+}
+
+.btn-regen:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+/* ── Accept Invite ──────────────────────────────────────── */
+.accept-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 12px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.accept-input:focus {
+  border-color: var(--amber);
+}
+
+.accept-input::placeholder {
+  color: var(--text-muted);
+}
+
+.accept-result {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  display: none;
+}
+
+.accept-result.success {
+  display: block;
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+.accept-result.error {
+  display: block;
+  background: var(--red-dim);
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .shell { padding: 16px 12px 48px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .header { flex-direction: column; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header" style="animation: fadeSlideIn 0.3s ease both;">
+    <h1>AMB <span>//</span> Dashboard</h1>
+    <span class="tag" id="node-tag">loading</span>
+  </div>
+
+  <!-- Node Status -->
+  <section class="panel" id="panel-node">
+    <div class="panel-head">
+      <h2>Node Status</h2>
+      <div>
+        <span class="status-dot" id="health-dot"></span>
+        <span id="health-label" style="font-size:0.75rem;color:var(--text-muted);">checking...</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="info-grid" id="node-info">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Peers -->
+  <section class="panel" id="panel-peers">
+    <div class="panel-head">
+      <h2>Peers</h2>
+      <span id="peer-count" style="font-size:0.75rem;color:var(--text-muted);">--</span>
+    </div>
+    <div class="panel-body" id="peers-list">
+      <div class="empty-state">loading peers...</div>
+    </div>
+  </section>
+
+  <!-- Inbox -->
+  <section class="panel" id="panel-inbox">
+    <div class="panel-head">
+      <h2>Inbox</h2>
+      <span id="msg-count" style="font-size:0.75rem;color:var(--text-muted);">--</span>
+    </div>
+    <div class="panel-body" id="inbox-list" style="max-height:400px;overflow-y:auto;">
+      <div class="empty-state">loading messages...</div>
+    </div>
+  </section>
+
+  <!-- Accept Invite -->
+  <section class="panel" id="panel-accept">
+    <div class="panel-head">
+      <h2>Accept Invite</h2>
+    </div>
+    <div class="panel-body">
+      <textarea class="accept-input" id="accept-paste" placeholder="Paste the peers.json snippet from an invite here, e.g.&#10;{&#10;  &quot;ember&quot;: {&#10;    &quot;url&quot;: &quot;http://calebs-mac:3141/amb&quot;,&#10;    &quot;secret&quot;: &quot;abc123...&quot;&#10;  }&#10;}"></textarea>
+      <div class="invite-actions">
+        <button class="btn" id="btn-accept" onclick="acceptInvite()">Accept Peer</button>
+      </div>
+      <div class="accept-result" id="accept-result"></div>
+    </div>
+  </section>
+
+  <!-- Invite Generator -->
+  <section class="panel" id="panel-invite">
+    <div class="panel-head">
+      <h2>Invite Generator</h2>
+    </div>
+    <div class="panel-body">
+      <div class="invite-controls">
+        <label>
+          Peer Name
+          <input type="text" id="invite-name" placeholder="josh" value="josh">
+        </label>
+        <label>
+          Public URL Override
+          <input type="text" id="invite-url" placeholder="auto-detect from config">
+        </label>
+      </div>
+      <div class="invite-output" id="invite-text">Generate an invite to see the message here.</div>
+      <div class="invite-actions">
+        <button class="btn" id="btn-generate" onclick="generateInvite()">Generate Invite</button>
+        <button class="btn btn-regen" id="btn-copy" onclick="copyInvite()" style="display:none;">Copy to Clipboard</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ── State ───────────────────────────────────────────────────
+let nodeConfig = null;
+const startTime = Date.now();
+
+// ── Helpers ─────────────────────────────────────────────────
+function relativeTime(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'm ' + (s % 60) + 's';
+  const h = Math.floor(m / 60);
+  return h + 'h ' + (m % 60) + 'm';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatTs(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  } catch { return iso; }
+}
+
+function infoCell(label, value, cls) {
+  return `<div class="info-cell">
+    <div class="label">${escapeHtml(label)}</div>
+    <div class="value${cls ? ' ' + cls : ''}">${escapeHtml(value)}</div>
+  </div>`;
+}
+
+// ── Fetch helpers ───────────────────────────────────────────
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+// ── Load Node Status ────────────────────────────────────────
+async function loadNode() {
+  try {
+    const [config, health] = await Promise.all([
+      fetchJSON('/api/node'),
+      fetchJSON('/health'),
+    ]);
+    nodeConfig = config;
+
+    document.getElementById('node-tag').textContent = config.nodeId;
+
+    const dot = document.getElementById('health-dot');
+    const label = document.getElementById('health-label');
+    dot.className = 'status-dot ok';
+    label.textContent = health.status + ' // v' + health.version;
+    label.style.color = 'var(--green)';
+
+    document.getElementById('node-info').innerHTML =
+      infoCell('Name', config.name, 'amber') +
+      infoCell('Host', config.host) +
+      infoCell('Port', String(config.port)) +
+      infoCell('Node ID', config.nodeId, 'amber') +
+      infoCell('Version', health.version) +
+      infoCell('Page Uptime', relativeTime(Date.now() - startTime));
+
+  } catch (e) {
+    const dot = document.getElementById('health-dot');
+    const label = document.getElementById('health-label');
+    dot.className = 'status-dot err';
+    label.textContent = 'unreachable';
+    label.style.color = 'var(--red)';
+  }
+}
+
+// ── Load Peers ──────────────────────────────────────────────
+async function loadPeers() {
+  try {
+    const peers = await fetchJSON('/api/peers');
+    const container = document.getElementById('peers-list');
+    document.getElementById('peer-count').textContent = peers.length + ' configured';
+
+    if (peers.length === 0) {
+      container.innerHTML = '<div class="empty-state">No peers configured.</div>';
+      return;
+    }
+
+    container.innerHTML = peers.map(p => `
+      <div class="peer-row">
+        <div>
+          <span class="peer-name">${escapeHtml(p.name)}</span>
+          <span class="peer-url">${escapeHtml(p.url)}</span>
+        </div>
+        <span class="peer-status checking" id="peer-${escapeHtml(p.name)}">...</span>
+      </div>
+    `).join('');
+
+    // Ping each peer's health in the background
+    for (const p of peers) {
+      checkPeer(p);
+    }
+  } catch (e) {
+    document.getElementById('peers-list').innerHTML =
+      '<div class="empty-state">Failed to load peers.</div>';
+  }
+}
+
+async function checkPeer(peer) {
+  const el = document.getElementById('peer-' + peer.name);
+  if (!el) return;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const healthUrl = peer.url.replace(/\/amb\/?$/, '') + '/health';
+    const res = await fetch(healthUrl, {
+      signal: controller.signal,
+      mode: 'no-cors',
+    });
+    clearTimeout(timer);
+    // no-cors means we can't read status, but if it didn't throw, connection exists
+    el.textContent = 'reachable';
+    el.className = 'peer-status reachable';
+  } catch {
+    el.textContent = 'unreachable';
+    el.className = 'peer-status unreachable';
+  }
+}
+
+// ── Load Inbox ──────────────────────────────────────────────
+async function loadInbox() {
+  try {
+    const messages = await fetchJSON('/inbox');
+    const container = document.getElementById('inbox-list');
+    document.getElementById('msg-count').textContent = messages.length + ' messages';
+
+    if (messages.length === 0) {
+      container.innerHTML = '<div class="empty-state">Inbox empty. Waiting for messages...</div>';
+      return;
+    }
+
+    // Show most recent first
+    const sorted = [...messages].reverse();
+    container.innerHTML = sorted.map(m => `
+      <div class="msg-row">
+        <div class="msg-meta">
+          <span class="msg-type">${escapeHtml(m.type)}</span>
+          <span class="msg-from">${escapeHtml(m.from)}</span>
+          <span class="msg-arrow">-&gt;</span>
+          <span class="msg-to">${escapeHtml(m.to)}</span>
+          <span class="msg-ts">${formatTs(m.ts)}</span>
+        </div>
+        <div class="msg-body">${escapeHtml(m.body)}</div>
+      </div>
+    `).join('');
+
+  } catch (e) {
+    document.getElementById('inbox-list').innerHTML =
+      '<div class="empty-state">Failed to load messages.</div>';
+  }
+}
+
+// ── Invite Generator ────────────────────────────────────────
+async function generateInvite() {
+  const name = document.getElementById('invite-name').value.trim() || 'peer';
+  const urlOverride = document.getElementById('invite-url').value.trim();
+  let endpoint = '/api/invite/' + encodeURIComponent(name);
+  if (urlOverride) endpoint += '?url=' + encodeURIComponent(urlOverride);
+
+  try {
+    const data = await fetchJSON(endpoint);
+    document.getElementById('invite-text').textContent = data.message;
+    document.getElementById('btn-copy').style.display = '';
+  } catch (e) {
+    document.getElementById('invite-text').textContent = 'Error generating invite: ' + e.message;
+  }
+}
+
+async function copyInvite() {
+  const text = document.getElementById('invite-text').textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy to Clipboard';
+      btn.classList.remove('copied');
+    }, 1500);
+  } catch {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+// ── Accept Invite ──────────────────────────────────────────
+async function acceptInvite() {
+  const raw = document.getElementById('accept-paste').value.trim();
+  const resultEl = document.getElementById('accept-result');
+  resultEl.className = 'accept-result';
+  resultEl.style.display = 'none';
+
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw);
+    const names = Object.keys(parsed);
+    if (names.length === 0) throw new Error('No peer found in JSON');
+
+    let added = [];
+    for (const name of names) {
+      const entry = parsed[name];
+      if (!entry.url || !entry.secret) throw new Error(`Peer "${name}" missing url or secret`);
+
+      const res = await fetch('/api/peers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, url: entry.url, secret: entry.secret }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Failed to add ${name}: ${res.status}`);
+      }
+      added.push(name);
+    }
+
+    resultEl.className = 'accept-result success';
+    resultEl.textContent = `Added peer${added.length > 1 ? 's' : ''}: ${added.join(', ')}`;
+    resultEl.style.display = 'block';
+    document.getElementById('accept-paste').value = '';
+
+    // Refresh peers list
+    loadPeers();
+  } catch (e) {
+    resultEl.className = 'accept-result error';
+    resultEl.textContent = e.message;
+    resultEl.style.display = 'block';
+  }
+}
+
+// ── Boot ────────────────────────────────────────────────────
+(async function boot() {
+  await loadNode();
+  loadPeers();
+  loadInbox();
+
+  // Auto-refresh uptime counter
+  setInterval(() => {
+    const uptimeCell = document.querySelector('.info-cell:last-child .value');
+    if (uptimeCell) uptimeCell.textContent = relativeTime(Date.now() - startTime);
+  }, 1000);
+
+  // Auto-refresh inbox every 15s
+  setInterval(loadInbox, 15000);
+})();
+</script>
+
+</body>
+</html>
