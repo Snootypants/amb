@@ -628,6 +628,30 @@ body::before {
     </div>
   </section>
 
+  <!-- Settings -->
+  <section class="panel" id="panel-settings">
+    <div class="panel-head">
+      <h2>Settings</h2>
+    </div>
+    <div class="panel-body">
+      <div class="invite-controls">
+        <label style="flex:3;">
+          Contacts Database Path
+          <input type="text" id="settings-contacts-db" placeholder="/path/to/contacts.db">
+        </label>
+        <label style="flex:0;align-self:flex-end;">
+          &nbsp;
+          <button class="btn" onclick="saveSettings()" style="margin:0;">Save</button>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+        <button class="btn btn-regen" onclick="createContactsDb()">Create New AMBcontacts.db</button>
+        <span id="settings-status" style="font-size:0.75rem;color:var(--text-muted);"></span>
+      </div>
+      <div class="accept-result" id="settings-result"></div>
+    </div>
+  </section>
+
 </div>
 
 <script>
@@ -910,12 +934,74 @@ async function acceptInvite() {
   }
 }
 
+// ── Settings ───────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const data = await fetchJSON('/api/settings');
+    document.getElementById('settings-contacts-db').value = data.contactsDb || '';
+  } catch {}
+}
+
+async function saveSettings() {
+  const resultEl = document.getElementById('settings-result');
+  const contactsDb = document.getElementById('settings-contacts-db').value.trim();
+
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contactsDb }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    resultEl.className = 'accept-result success';
+    resultEl.textContent = 'Settings saved. Contacts DB: ' + (data.contactsDb || '(none)');
+    resultEl.style.display = 'block';
+
+    // Reload contacts with new DB
+    loadContacts();
+    setTimeout(() => { resultEl.style.display = 'none'; }, 3000);
+  } catch (e) {
+    resultEl.className = 'accept-result error';
+    resultEl.textContent = e.message;
+    resultEl.style.display = 'block';
+  }
+}
+
+async function createContactsDb() {
+  const resultEl = document.getElementById('settings-result');
+
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contactsDb: 'create' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    document.getElementById('settings-contacts-db').value = data.contactsDb;
+    resultEl.className = 'accept-result success';
+    resultEl.textContent = 'Created ' + data.contactsDb;
+    resultEl.style.display = 'block';
+
+    loadContacts();
+    setTimeout(() => { resultEl.style.display = 'none'; }, 3000);
+  } catch (e) {
+    resultEl.className = 'accept-result error';
+    resultEl.textContent = e.message;
+    resultEl.style.display = 'block';
+  }
+}
+
 // ── Boot ────────────────────────────────────────────────────
 (async function boot() {
   await loadNode();
   loadPeers();
   loadInbox();
   loadContacts();
+  loadSettings();
 
   // Auto-refresh uptime counter
   setInterval(() => {

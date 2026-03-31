@@ -287,4 +287,77 @@ describe('Dashboard API', () => {
       assert.equal(res.status, 404);
     });
   });
+
+  describe('GET /api/settings', () => {
+    it('returns current settings', async () => {
+      const res = await fetch(`${baseUrl}/api/settings`);
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.equal(data.name, 'test-node');
+      assert.equal(data.host, 'test-host');
+      assert.ok('contactsDb' in data);
+    });
+
+    it('does not expose dbPath', async () => {
+      const res = await fetch(`${baseUrl}/api/settings`);
+      const data = await res.json();
+      assert.equal(data.dbPath, undefined);
+    });
+  });
+
+  describe('PUT /api/settings', () => {
+    it('updates contactsDb path', async () => {
+      const newPath = '/tmp/test-new-contacts.db';
+      const res = await fetch(`${baseUrl}/api/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactsDb: newPath }),
+      });
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.equal(data.contactsDb, newPath);
+    });
+
+    it('setting contactsDb to empty string clears it', async () => {
+      const res = await fetch(`${baseUrl}/api/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactsDb: '' }),
+      });
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.equal(data.contactsDb, '');
+
+      // contacts endpoint should now 404
+      const contactsRes = await fetch(`${baseUrl}/api/contacts`);
+      assert.equal(contactsRes.status, 404);
+    });
+
+    it('can create AMBcontacts.db when setting to "create"', async () => {
+      const res = await fetch(`${baseUrl}/api/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactsDb: 'create' }),
+      });
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.ok(data.contactsDb.includes('AMBcontacts.db'));
+
+      // Should be usable now
+      const contactsRes = await fetch(`${baseUrl}/api/contacts`);
+      assert.equal(contactsRes.status, 200);
+
+      // Clean up
+      try { fs.unlinkSync(data.contactsDb); } catch {}
+    });
+
+    it('rejects unknown settings', async () => {
+      const res = await fetch(`${baseUrl}/api/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hackerField: 'nope' }),
+      });
+      assert.equal(res.status, 400);
+    });
+  });
 });

@@ -186,6 +186,72 @@ function createApp(opts = {}) {
     }
   });
 
+  // GET /api/settings — current config (safe fields only)
+  app.get('/api/settings', (_req, res) => {
+    res.json({
+      name: config.name,
+      host: config.host,
+      port: config.port,
+      contactsDb: config.contactsDb || '',
+    });
+  });
+
+  // PUT /api/settings — update config
+  const ALLOWED_SETTINGS = ['contactsDb'];
+  app.put('/api/settings', (req, res) => {
+    const body = req.body || {};
+    const keys = Object.keys(body);
+    const invalid = keys.filter(k => !ALLOWED_SETTINGS.includes(k));
+    if (invalid.length > 0) {
+      return res.status(400).json({ error: `Unknown settings: ${invalid.join(', ')}` });
+    }
+
+    if ('contactsDb' in body) {
+      const val = body.contactsDb;
+
+      if (val === 'create') {
+        // Create AMBcontacts.db in the app directory
+        const dbPath = path.join(__dirname, 'AMBcontacts.db');
+        const Database = require('better-sqlite3');
+        const db = new Database(dbPath);
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS contacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            role TEXT,
+            context TEXT,
+            skills TEXT,
+            notes TEXT,
+            email TEXT,
+            github TEXT,
+            slack_id TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+          )
+        `);
+        db.close();
+        config.contactsDb = dbPath;
+      } else {
+        config.contactsDb = val || '';
+      }
+
+      // Persist to config.json if we have a real file
+      if (opts.configPath) {
+        const fs = require('node:fs');
+        const current = JSON.parse(fs.readFileSync(opts.configPath, 'utf-8'));
+        current.contactsDb = config.contactsDb;
+        fs.writeFileSync(opts.configPath, JSON.stringify(current, null, 2) + '\n');
+      }
+    }
+
+    res.json({
+      name: config.name,
+      host: config.host,
+      port: config.port,
+      contactsDb: config.contactsDb || '',
+    });
+  });
+
   // GET /api/invite/:peerName — generate invite message with shared secret
   app.get('/api/invite/:peerName', (req, res) => {
     const peerName = req.params.peerName;
@@ -219,7 +285,7 @@ I've added you on my end. Once you're running, hit my /health endpoint to verify
 // ── Standalone startup ─────────────────────────────────────────
 if (require.main === module) {
   const config = require('./config.json');
-  const app = createApp({ peersPath: path.join(__dirname, 'peers.json') });
+  const app = createApp({ peersPath: path.join(__dirname, 'peers.json'), configPath: path.join(__dirname, 'config.json') });
   app.listen(config.port, () => {
     console.log(`AMB node ${config.name}@${config.host} listening on :${config.port}`);
   });
