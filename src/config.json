@@ -2,5 +2,6 @@
   "name": "ember",
   "host": "calebs-mac",
   "port": 3141,
-  "dbPath": "./messages.db"
+  "dbPath": "./messages.db",
+  "contactsDb": "/Users/calebbelshe/forge/dbs/contacts.db"
 }

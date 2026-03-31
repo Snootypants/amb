@@ -423,6 +423,47 @@ body::before {
   border-color: var(--text-muted);
 }
 
+/* ── Contact Picker ─────────────────────────────────────── */
+.contact-picker {
+  position: relative;
+}
+
+.contact-picker select {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.contact-picker select:focus {
+  border-color: var(--amber);
+}
+
+.contact-picker select option {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.no-contacts-msg {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
 /* ── Accept Invite ──────────────────────────────────────── */
 .accept-input {
   width: 100%;
@@ -538,6 +579,16 @@ body::before {
     </div>
     <div class="panel-body">
       <textarea class="accept-input" id="accept-paste" placeholder="Paste the peers.json snippet from an invite here, e.g.&#10;{&#10;  &quot;ember&quot;: {&#10;    &quot;url&quot;: &quot;http://calebs-mac:3141/amb&quot;,&#10;    &quot;secret&quot;: &quot;abc123...&quot;&#10;  }&#10;}"></textarea>
+      <div class="invite-controls" style="margin-top:12px;">
+        <label>
+          Link to Contact
+          <div class="contact-picker">
+            <select id="accept-contact">
+              <option value="">-- none --</option>
+            </select>
+          </div>
+        </label>
+      </div>
       <div class="invite-actions">
         <button class="btn" id="btn-accept" onclick="acceptInvite()">Accept Peer</button>
       </div>
@@ -559,6 +610,14 @@ body::before {
         <label>
           Public URL Override
           <input type="text" id="invite-url" placeholder="auto-detect from config">
+        </label>
+        <label>
+          Link to Contact
+          <div class="contact-picker">
+            <select id="invite-contact">
+              <option value="">-- none --</option>
+            </select>
+          </div>
         </label>
       </div>
       <div class="invite-output" id="invite-text">Generate an invite to see the message here.</div>
@@ -772,6 +831,35 @@ async function copyInvite() {
   }
 }
 
+// ── Load Contacts ──────────────────────────────────────────
+let contactsList = [];
+
+async function loadContacts() {
+  try {
+    const contacts = await fetchJSON('/api/contacts');
+    contactsList = contacts;
+    const selectors = ['accept-contact', 'invite-contact'];
+    for (const id of selectors) {
+      const sel = document.getElementById(id);
+      if (!sel) continue;
+      // Keep first option (-- none --)
+      sel.innerHTML = '<option value="">-- none --</option>';
+      for (const c of contacts) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name + (c.role ? ` (${c.role})` : '');
+        sel.appendChild(opt);
+      }
+    }
+  } catch {
+    // No contacts DB configured — hide pickers
+    const pickers = document.querySelectorAll('.contact-picker');
+    pickers.forEach(p => {
+      p.innerHTML = '<span class="no-contacts-msg">No contacts DB configured</span>';
+    });
+  }
+}
+
 // ── Accept Invite ──────────────────────────────────────────
 async function acceptInvite() {
   const raw = document.getElementById('accept-paste').value.trim();
@@ -791,10 +879,14 @@ async function acceptInvite() {
       const entry = parsed[name];
       if (!entry.url || !entry.secret) throw new Error(`Peer "${name}" missing url or secret`);
 
+      const contactId = document.getElementById('accept-contact').value;
+      const payload = { name, url: entry.url, secret: entry.secret };
+      if (contactId) payload.contactId = Number(contactId);
+
       const res = await fetch('/api/peers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, url: entry.url, secret: entry.secret }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -823,6 +915,7 @@ async function acceptInvite() {
   await loadNode();
   loadPeers();
   loadInbox();
+  loadContacts();
 
   // Auto-refresh uptime counter
   setInterval(() => {

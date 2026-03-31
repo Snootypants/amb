@@ -1,9 +1,39 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
+const os = require('node:os');
+const fs = require('node:fs');
 const { createApp } = require('../server');
 
+// Create a temp contacts DB for tests
+function createTestContactsDb() {
+  const Database = require('better-sqlite3');
+  const dbPath = path.join(os.tmpdir(), `amb-test-contacts-${Date.now()}.db`);
+  const db = new Database(dbPath);
+  db.exec(`
+    CREATE TABLE contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      role TEXT,
+      context TEXT,
+      skills TEXT,
+      notes TEXT,
+      email TEXT,
+      github TEXT,
+      slack_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.prepare("INSERT INTO contacts (name, role) VALUES (?, ?)").run("Josue", "Coworker");
+  db.prepare("INSERT INTO contacts (name, role) VALUES (?, ?)").run("Andy", "Coworker");
+  db.prepare("INSERT INTO contacts (name, role) VALUES (?, ?)").run("Omar", "AI researcher");
+  db.close();
+  return dbPath;
+}
+
 describe('Dashboard API', () => {
-  let server, baseUrl;
+  let server, baseUrl, contactsDbPath;
   const testConfig = { name: 'test-node', host: 'test-host', port: 0, dbPath: ':memory:' };
   const testPeers = {
     alice: { url: 'https://alice.ts.net:3141', secret: 'alice-secret-123' },
@@ -11,6 +41,8 @@ describe('Dashboard API', () => {
   };
 
   before(async () => {
+    contactsDbPath = createTestContactsDb();
+    testConfig.contactsDb = contactsDbPath;
     const app = createApp({ config: testConfig, peers: testPeers });
     await new Promise((resolve) => {
       server = app.listen(0, () => {
@@ -22,6 +54,7 @@ describe('Dashboard API', () => {
 
   after(async () => {
     await new Promise((resolve) => server.close(resolve));
+    try { fs.unlinkSync(contactsDbPath); } catch {}
   });
 
   describe('GET /api/node', () => {
@@ -187,6 +220,71 @@ describe('Dashboard API', () => {
         body: JSON.stringify(msg),
       });
       assert.equal(res.status, 202, 'newly added peer should be able to send messages');
+    });
+
+    it('accepts optional contactId and includes it in peer list', async () => {
+      const res = await fetch(`${baseUrl}/api/peers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'josue-node', url: 'https://josue.ts.net/amb', secret: 'josue-s', contactId: 1 }),
+      });
+      assert.equal(res.status, 201);
+      const data = await res.json();
+      assert.equal(data.contactId, 1);
+      assert.equal(data.contactName, 'Josue');
+    });
+  });
+
+  describe('GET /api/contacts', () => {
+    it('returns contacts from configured DB', async () => {
+      const res = await fetch(`${baseUrl}/api/contacts`);
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.ok(data.length >= 3);
+      const josue = data.find(c => c.name === 'Josue');
+      assert.ok(josue);
+      assert.equal(josue.role, 'Coworker');
+    });
+
+    it('does not expose sensitive fields', async () => {
+      const res = await fetch(`${baseUrl}/api/contacts`);
+      const data = await res.json();
+      for (const c of data) {
+        assert.ok(c.id, 'should have id');
+        assert.ok(c.name, 'should have name');
+        // Should not expose email/slack_id by default
+      }
+    });
+
+    it('supports search query param', async () => {
+      const res = await fetch(`${baseUrl}/api/contacts?q=omar`);
+      const data = await res.json();
+      assert.equal(data.length, 1);
+      assert.equal(data[0].name, 'Omar');
+    });
+  });
+
+  describe('GET /api/contacts (no DB configured)', () => {
+    let noDbServer, noDbUrl;
+
+    before(async () => {
+      const noContactsConfig = { name: 'no-contacts', host: 'test', port: 0, dbPath: ':memory:' };
+      const app = createApp({ config: noContactsConfig, peers: {} });
+      await new Promise((resolve) => {
+        noDbServer = app.listen(0, () => {
+          noDbUrl = `http://localhost:${noDbServer.address().port}`;
+          resolve();
+        });
+      });
+    });
+
+    after(async () => {
+      await new Promise((resolve) => noDbServer.close(resolve));
+    });
+
+    it('returns 404 when no contactsDb configured', async () => {
+      const res = await fetch(`${noDbUrl}/api/contacts`);
+      assert.equal(res.status, 404);
     });
   });
 });

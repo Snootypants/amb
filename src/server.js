@@ -100,23 +100,90 @@ function createApp(opts = {}) {
 
   // POST /api/peers — accept a peer (add to live peers + write to peers.json)
   app.post('/api/peers', (req, res) => {
-    const { name, url, secret } = req.body || {};
+    const { name, url, secret, contactId } = req.body || {};
     if (!name || !url || !secret) {
       return res.status(400).json({ error: 'Missing required fields: name, url, secret' });
     }
 
     // Add to live peers object so inbox auth works immediately
-    peers[name] = { url, secret };
+    const peerEntry = { url, secret };
+    if (contactId) peerEntry.contactId = contactId;
+    peers[name] = peerEntry;
 
     // Persist to peers.json (if we have a real file path)
     if (opts.peersPath) {
       const fs = require('node:fs');
       const current = JSON.parse(fs.readFileSync(opts.peersPath, 'utf-8'));
-      current[name] = { url, secret };
+      current[name] = peerEntry;
       fs.writeFileSync(opts.peersPath, JSON.stringify(current, null, 2) + '\n');
     }
 
-    res.status(201).json({ name, url });
+    // Look up contact name if contactId provided and contactsDb configured
+    let contactName;
+    if (contactId && config.contactsDb) {
+      try {
+        const Database = require('better-sqlite3');
+        const cdb = new Database(config.contactsDb, { readonly: true });
+        const row = cdb.prepare('SELECT name FROM contacts WHERE id = ?').get(contactId);
+        if (row) contactName = row.name;
+        cdb.close();
+      } catch {}
+    }
+
+    const result = { name, url };
+    if (contactId) result.contactId = contactId;
+    if (contactName) result.contactName = contactName;
+    res.status(201).json(result);
+  });
+
+  // GET /api/contacts — list contacts from configured contacts DB
+  app.get('/api/contacts', (req, res) => {
+    if (!config.contactsDb) {
+      return res.status(404).json({ error: 'No contactsDb configured. Set contactsDb in config.json or the app will create AMBcontacts.db.' });
+    }
+
+    try {
+      const Database = require('better-sqlite3');
+      const fs = require('node:fs');
+
+      // If the configured path doesn't exist, create AMBcontacts.db in the app directory
+      let dbPath = config.contactsDb;
+      if (!fs.existsSync(dbPath)) {
+        dbPath = path.join(__dirname, 'AMBcontacts.db');
+        config.contactsDb = dbPath;
+        const db = new Database(dbPath);
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS contacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            role TEXT,
+            context TEXT,
+            skills TEXT,
+            notes TEXT,
+            email TEXT,
+            github TEXT,
+            slack_id TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+          )
+        `);
+        db.close();
+      }
+
+      const cdb = new Database(dbPath, { readonly: true });
+      const q = req.query.q;
+      let rows;
+      if (q) {
+        const like = `%${q.toLowerCase()}%`;
+        rows = cdb.prepare('SELECT id, name, role, context, github FROM contacts WHERE lower(name) LIKE ? OR lower(role) LIKE ? ORDER BY name ASC').all(like, like);
+      } else {
+        rows = cdb.prepare('SELECT id, name, role, context, github FROM contacts ORDER BY name ASC').all();
+      }
+      cdb.close();
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // GET /api/invite/:peerName — generate invite message with shared secret
